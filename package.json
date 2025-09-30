@@ -1,6 +1,6 @@
 {
-  "name": "dsync-sign",
-  "version": "1.0.1",
+  "name": "@hackthedev/dsync-sign",
+  "version": "1.0.2",
   "description": "",
   "main": "index.mjs",
   "type": "module",
