@@ -14,7 +14,7 @@ dSyncSign is an additional package that comes with a few helper functions that c
 You can import the package with the following line into your code and install it like below
 
 ```js
-import { dSyncSign } from "@hackthedev/dsync";
+import { dSyncSign } from "@hackthedev/dsync-sign";
 
 const signer = new dSyncSign("./mykeys.json"); // optional path for private key file
 ```

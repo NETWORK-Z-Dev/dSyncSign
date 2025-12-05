@@ -52,15 +52,32 @@ export class dSyncSign {
         }
     }
 
-    GenerateGid(publicKey) {
+    async signString(text) {
+        const priv = await this.getPrivateKey();
+        const signer = crypto.createSign("SHA256");
+        signer.update(text, "utf8");
+        signer.end();
+        return signer.sign(priv, "base64");
+    }
+
+
+    verifyString(text, signatureBase64, publicKeyPem) {
+        const verifier = crypto.createVerify("SHA256");
+        verifier.update(text, "utf8");
+        verifier.end();
+        return verifier.verify(publicKeyPem, signatureBase64, "base64");
+    }
+
+
+    generateGid(publicKey) {
         if (publicKey.length >= 120) {
-            return this.EncodeToBase64(publicKey.substring(80, 120)) // 40 chars
+            return this.encodeToBase64(publicKey.substring(80, 120)) // 40 chars
         } else {
-            return this.EncodeToBase64(publicKey.substring(0, publicKey.length))
+            return this.encodeToBase64(publicKey.substring(0, publicKey.length))
         }
     }
 
-    EncodeToBase64(str) {
+    encodeToBase64(str) {
         return Buffer.from(str, "utf8").toString("base64")
     }
 
