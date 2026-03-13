@@ -212,7 +212,7 @@ export class dSyncSign {
         verifier.update(payload, "utf8");
         verifier.end();
 
-        return verifier.verify(publicKey, signature, "base64");
+        return verifier.verify(this.normalizePublicKey(publicKey), signature, "base64");
     }
 
     getByPath(root, path) {
@@ -311,7 +311,7 @@ export class dSyncSign {
                 }
 
                 const signature = item[this.sigField];
-                let pub = publicKeyOrGetter;
+                let pub = this.normalizePublicKey(publicKeyOrGetter);
 
                 if (typeof publicKeyOrGetter === "function") pub = await publicKeyOrGetter(item, targetOrRoot);
                 if (!pub) {
@@ -328,7 +328,7 @@ export class dSyncSign {
             if (!Object.prototype.hasOwnProperty.call(target, this.sigField)) return false;
 
             const signature = target[this.sigField];
-            let pub = publicKeyOrGetter;
+            let pub = this.normalizePublicKey(publicKeyOrGetter);
 
             if (typeof publicKeyOrGetter === "function") pub = await publicKeyOrGetter(target, targetOrRoot);
             if (!pub) return false;
