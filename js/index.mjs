@@ -21,14 +21,38 @@ export class dSyncSign {
     }
 
     normalizePublicKey(key) {
-        return key
-            .replace(/\r|\n|\s+/g, '')
-            .replace('-----BEGINPUBLICKEY-----', '-----BEGIN PUBLIC KEY-----')
-            .replace('-----ENDPUBLICKEY-----', '-----END PUBLIC KEY-----')
-            .replace(/-----BEGIN PUBLIC KEY-----/, '-----BEGIN PUBLIC KEY-----\n')
-            .replace(/-----END PUBLIC KEY-----/, '\n-----END PUBLIC KEY-----')
-            .replace(/(.{64})/g, '$1\n')
+        if (!key) return key;
+
+        // fuck you
+        key = String(key)
+            .replace(/&lt;br\s*\/?&gt;/gi, "\n")
+            .replace(/<br\s*\/?>/gi, "\n")
+            .replace(/\r\n/g, "\n")
+            .replace(/\r/g, "\n")
             .trim();
+
+        if (key.includes("BEGIN PUBLIC KEY") || key.includes("BEGIN RSA PUBLIC KEY")) {
+            key = key
+                .replace(/\n+/g, "\n")
+                .replace(/-----BEGIN PUBLIC KEY-----\s*/g, "-----BEGIN PUBLIC KEY-----\n")
+                .replace(/-----END PUBLIC KEY-----/g, "\n-----END PUBLIC KEY-----")
+                .replace(/-----BEGIN RSA PUBLIC KEY-----\s*/g, "-----BEGIN RSA PUBLIC KEY-----\n")
+                .replace(/-----END RSA PUBLIC KEY-----/g, "\n-----END RSA PUBLIC KEY-----");
+
+            const isRsa = key.includes("BEGIN RSA PUBLIC KEY");
+            const begin = isRsa ? "-----BEGIN RSA PUBLIC KEY-----" : "-----BEGIN PUBLIC KEY-----";
+            const end = isRsa ? "-----END RSA PUBLIC KEY-----" : "-----END PUBLIC KEY-----";
+
+            let body = key
+                .replace(begin, "")
+                .replace(end, "")
+                .replace(/\s+/g, "");
+
+            body = body.match(/.{1,64}/g)?.join("\n") || body;
+            return `${begin}\n${body}\n${end}`;
+        }
+
+        return key;
     }
 
     async ensureKeyPair() {
@@ -62,6 +86,8 @@ export class dSyncSign {
 
 
     verifyString(text, signatureBase64, publicKeyPem) {
+        publicKeyPem = this.normalizePublicKey(publicKeyPem);
+
         const verifier = crypto.createVerify("SHA256");
         verifier.update(text, "utf8");
         verifier.end();
@@ -94,10 +120,15 @@ export class dSyncSign {
 
     async encrypt(data, recipient) {
         const plaintext = typeof data === "string" ? data : this.stableStringify(data);
+
+        if (typeof recipient === "string") {
+            recipient = this.normalizePublicKey(recipient);
+        }
+
         let aesKey;
         let envelope = {method: ""};
 
-        if (recipient.includes("BEGIN PUBLIC KEY") || recipient.includes("BEGIN RSA PUBLIC KEY")) {
+        if (typeof recipient === "string" && (recipient.includes("BEGIN PUBLIC KEY") || recipient.includes("BEGIN RSA PUBLIC KEY"))) {
             aesKey = crypto.randomBytes(32);
             envelope.method = "rsa";
             envelope.encKey = crypto.publicEncrypt(
@@ -111,9 +142,7 @@ export class dSyncSign {
             envelope.salt = salt.toString("base64");
         }
 
-        // Standard-konformer 12-Byte-IV (statt 16)
         const iv = crypto.randomBytes(12);
-
         const cipher = crypto.createCipheriv("aes-256-gcm", aesKey, iv);
         const ciphertext = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
         const tag = cipher.getAuthTag();
@@ -175,6 +204,8 @@ export class dSyncSign {
     }
 
     verifyData(data, signature, publicKey) {
+        publicKey = this.normalizePublicKey(publicKey);
+
         const verifier = crypto.createVerify("SHA256");
         const payload = typeof data === "string" ? data : this.stableStringify(data);
 
