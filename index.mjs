@@ -115,7 +115,7 @@ export class dSyncSign {
 
     async getPublicKey() {
         const {publicKey} = await this.ensureKeyPair();
-        return publicKey;
+        return this.normalizePublicKey(publicKey);
     }
 
     async encrypt(data, recipient) {
