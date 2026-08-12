@@ -1,7 +1,7 @@
 {
   "name": "@hackthedev/dsync-sign",
   "version": "1.0.15",
-  "description": "",
+  "description": "A very important library for the entire dSync family, taking care of cryptographic functions like signing, encryption and more.",
   "main": "index.mjs",
   "type": "module",
   "scripts": {
